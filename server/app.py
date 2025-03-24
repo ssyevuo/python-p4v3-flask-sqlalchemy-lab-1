@@ -1,7 +1,8 @@
 # server/app.py
 #!/usr/bin/env python3
+#jsonify is used to convert dictionaries to JSON responses
 
-from flask import Flask, make_response
+from flask import Flask, make_response, jsonify
 from flask_migrate import Migrate
 
 from models import db, Earthquake
@@ -21,7 +22,34 @@ def index():
     return make_response(body, 200)
 
 # Add views here
-
+@app.route('/earthquakes/<int:id>')
+def get_earthquake(id):
+    # query the database
+    earthquake = Earthquake.query.get(id)
+    if earthquake:
+        return jsonify({
+            'id': earthquake.id,
+            'location': earthquake.location,
+            'magnitude': earthquake.magnitude,
+            'year': earthquake.year
+        }), 200
+    else:
+        return jsonify({'message': f"Earthquake {id} not found."}), 404
+    
+@app.route('/earthquakes/magnitude/<float:magnitude>')
+def get_earthquake_magnitude(magnitude):
+    #query the database based on magnitude
+    earthquakes = Earthquake.query.filter(Earthquake.magnitude >= magnitude).all()
+    # store
+    results = []
+    for earthquake in earthquakes:
+        results.append({
+            'id': earthquake.id,
+            'location': earthquake.location,
+            'magnitude': earthquake.magnitude,
+            'year': earthquake.year
+        })
+    return jsonify({'count': len(results), 'quakes': results}), 200
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
